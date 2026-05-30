@@ -1,73 +1,109 @@
-# React + TypeScript + Vite
+<div align="center">
+  <img src="./public/favicon.svg" alt="" width="64" height="64">
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+  # Heimdall
 
-Currently, two official plugins are available:
+  **A self-hosted homelab dashboard — start page for your services**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+  [![Node version](https://img.shields.io/badge/Node.js->=20-3c873a?style=flat-square)](https://nodejs.org)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+  [![React](https://img.shields.io/badge/React-19-087ea4?style=flat-square&logo=react&logoColor=white)](https://react.dev)
+  [![Vite](https://img.shields.io/badge/Vite-8-646cff?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
+  [![Docker](https://img.shields.io/badge/Docker-ready-2496ed?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
+  [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
-## React Compiler
+  ⭐ If you like this project, star it on GitHub — it helps a lot!
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+  [Features](#features) • [Getting started](#getting-started) • [Run with Docker](#run-with-docker) • [Configuration](#configuration) • [Tech stack](#tech-stack)
 
-## Expanding the ESLint configuration
+</div>
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+A modern replacement for the [original Heimdall](https://github.com/linuxserver/Heimdall) dashboard. No backend, no database — everything runs in your browser with data persisted to `localStorage`. Drop it behind a reverse proxy and you've got a clean start page for all your self-hosted services.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Features
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **App tiles** — Add links to your services with auto-resolved icons (110+ apps via Simple Icons), custom colors, and Small/Medium/Large sizes
+- **Categories** — Organize apps into collapsible groups; rename or delete as needed
+- **Drag & drop** — Reorder apps within a category by long-pressing and dragging
+- **Smart suggestions** — Type an app name and get instant suggestions with icon preview; "Guess" button auto-fills the URL
+- **Search bar** — Search via Google, Bing, DuckDuckGo, or a custom URL. `Ctrl+K` to focus
+- **Weather forecast** — 7-day forecast powered by Open-Meteo (free, no API key). Type a city, get geocoded suggestions with current conditions, humidity, wind, and precipitation
+- **Clock widget** — Live clock in 12h or 24h format
+- **Notes widget** — Inline editable sticky notes persisted to localStorage
+- **Dark / Light / System theme** — Full dark mode with System option that follows OS preference
+- **Custom backgrounds** — Solid colors, gradients, curated Unsplash images, or custom upload with live preview
+- **Backup & restore** — Export everything (apps, categories, settings) to a JSON file and import it back
+- **PWA ready** — Installable with standalone display, theme color, and app icons
+- **Docker** — Multi-stage build with nginx, ready to deploy on port 8086
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting started
+
+### Prerequisites
+
+- [Node.js LTS](https://nodejs.org/en/download) (v20 or later)
+
+### Install and run
+
+```bash
+# Clone the repo
+git clone https://github.com/klossman0814/heimdall.git
+cd heimdall
+
+# Install dependencies
+npm install
+
+# Start the dev server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The dev server starts on `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Production build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run preview
 ```
+
+## Run with Docker
+
+```bash
+docker build -t heimdall .
+docker run -d --name heimdall -p 8086:8086 heimdall
+```
+
+Open `http://localhost:8086` in your browser.
+
+> [!TIP]
+> All data is stored in `localStorage`. To preserve your dashboard across container restarts, use the built-in **Export** feature from the settings panel to download a JSON backup.
+
+## Configuration
+
+### Adding apps
+
+1. Click the **+** button to open the app form
+2. Type a name — suggestions appear with matching apps and icon previews
+3. The icon URL auto-fills from Simple Icons CDN; you can override it
+4. Optionally set a color, category, and tile size
+
+### Search provider
+
+Open the settings panel (gear icon in the top-right) and choose between Google, Bing, DuckDuckGo, or enter a custom search URL.
+
+### Backgrounds
+
+Choose from solid colors, gradients, or pre-selected Unsplash images. You can also upload your own image — it's stored as a data URL in `localStorage`.
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Framework | [React 19](https://react.dev) + [TypeScript](https://www.typescriptlang.org) |
+| Build | [Vite 8](https://vitejs.dev) |
+| Styling | [Tailwind CSS 4](https://tailwindcss.com) + CSS custom properties |
+| State | [Zustand 5](https://github.com/pmndrs/zustand) |
+| Drag & drop | [@dnd-kit](https://dndkit.com) |
+| Icons | [Lucide](https://lucide.dev) (UI) + [Simple Icons](https://simpleicons.org) CDN (app icons) |
+| Weather | [Open-Meteo](https://open-meteo.com) (free, no API key) |
+| Docker | `node:20-alpine` → `nginx:alpine` multi-stage build |
+| Port | `8086` |
