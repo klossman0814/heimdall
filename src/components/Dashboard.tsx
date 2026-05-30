@@ -16,6 +16,7 @@ import type { AppItem } from '../types'
 import { useAppStore } from '../store/appStore'
 import { useLayoutStore } from '../store/layoutStore'
 import { useSettingsStore } from '../store/settingsStore'
+import { useTopItems } from '../hooks/useTopItems'
 import SearchBar from './SearchBar'
 import CategoryGroup from './CategoryGroup'
 import AppForm from './AppForm'
@@ -26,6 +27,8 @@ export default function Dashboard() {
   const { categories, reorderCategories } = useLayoutStore()
   const { settings } = useSettingsStore()
   const [formOpen, setFormOpen] = useState(false)
+
+  useTopItems()
   const [editingApp, setEditingApp] = useState<AppItem | null>(null)
   const [showAll] = useState(false)
 

@@ -7,6 +7,17 @@ export interface AppItem {
   categoryId: string
   tileSize: 'sm' | 'md' | 'lg'
   position: number
+  clickCount: number
+  previousCategoryId: string | null
+}
+
+export const TOP_ITEMS_ID = 'cat_top_items'
+
+export interface TopItemsConfig {
+  enabled: boolean
+  count: number
+  resetInterval: 'never' | 'weekly' | 'monthly'
+  lastResetAt: string | null
 }
 
 export interface Category {
@@ -60,4 +71,5 @@ export interface Settings {
   customSearchUrl: string
   background: BackgroundSettings
   widgets: WidgetConfig
+  topItems: TopItemsConfig
 }

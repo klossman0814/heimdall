@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { AppItem } from '../types'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useAppStore } from '../store/appStore'
 
 interface TileProps {
   app: AppItem
@@ -79,6 +80,7 @@ export default function Tile({ app, onEdit, onRemove }: TileProps) {
 
   function handleOpen() {
     if (!app.url) return
+    useAppStore.getState().incrementClickCount(app.id)
     window.open(app.url.startsWith('http') ? app.url : `https://${app.url}`, '_blank')
   }
 

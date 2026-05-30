@@ -34,11 +34,13 @@ function pickColor(index: number): string {
 interface AppState {
   apps: AppItem[]
   hydrate: (apps: AppItem[]) => void
-  addApp: (app: Omit<AppItem, 'id' | 'position'>) => void
+  addApp: (app: Omit<AppItem, 'id' | 'position' | 'clickCount' | 'previousCategoryId'>) => void
   updateApp: (id: string, updates: Partial<AppItem>) => void
   removeApp: (id: string) => void
   reorderApps: (categoryId: string, appIds: string[]) => void
   moveAppToCategory: (appId: string, categoryId: string, position: number) => void
+  incrementClickCount: (appId: string) => void
+  resetAllClickCounts: () => void
   exportApps: () => AppItem[]
   importApps: (apps: AppItem[]) => void
 }
@@ -46,7 +48,14 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   apps: [],
 
-  hydrate: (apps) => set({ apps }),
+  hydrate: (apps) =>
+    set({
+      apps: apps.map((a) => ({
+        ...a,
+        clickCount: a.clickCount ?? 0,
+        previousCategoryId: a.previousCategoryId ?? null,
+      })),
+    }),
 
   addApp: (app) =>
     set((state) => {
@@ -61,6 +70,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         icon,
         color,
         position: maxPos + 1,
+        clickCount: 0,
+        previousCategoryId: null,
       }
       return { apps: [...state.apps, newApp] }
     }),
@@ -88,10 +99,32 @@ export const useAppStore = create<AppState>((set, get) => ({
       ),
     })),
 
+  incrementClickCount: (appId) =>
+    set((state) => ({
+      apps: state.apps.map((a) =>
+        a.id === appId ? { ...a, clickCount: a.clickCount + 1 } : a
+      ),
+    })),
+
+  resetAllClickCounts: () =>
+    set((state) => ({
+      apps: state.apps.map((a) => ({ ...a, clickCount: 0 })),
+    })),
+
   moveAppToCategory: (appId, categoryId, position) =>
     set((state) => ({
       apps: state.apps.map((a) =>
-        a.id === appId ? { ...a, categoryId, position } : a
+        a.id === appId
+          ? {
+              ...a,
+              categoryId,
+              position,
+              previousCategoryId:
+                categoryId === a.categoryId
+                  ? a.previousCategoryId
+                  : a.categoryId,
+            }
+          : a
       ),
     })),
 
@@ -100,6 +133,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   importApps: (apps) => {
-    set({ apps })
+    set({
+      apps: apps.map((a) => ({
+        ...a,
+        clickCount: a.clickCount ?? 0,
+        previousCategoryId: a.previousCategoryId ?? null,
+      })),
+    })
   },
 }))

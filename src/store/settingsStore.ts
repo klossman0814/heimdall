@@ -1,5 +1,12 @@
 import { create } from 'zustand'
-import type { Settings } from '../types'
+import type { Settings, TopItemsConfig } from '../types'
+
+const defaultTopItems: TopItemsConfig = {
+  enabled: true,
+  count: 5,
+  resetInterval: 'never',
+  lastResetAt: null,
+}
 
 const defaultSettings: Settings = {
   theme: 'dark',
@@ -15,6 +22,7 @@ const defaultSettings: Settings = {
     notes: false,
     notesContent: '',
   },
+  topItems: { ...defaultTopItems },
 }
 
 interface SettingsState {
@@ -22,6 +30,7 @@ interface SettingsState {
   hydrate: (settings: Settings) => void
   updateSettings: (updates: Partial<Settings>) => void
   updateWidgets: (updates: Partial<Settings['widgets']>) => void
+  updateTopItems: (updates: Partial<TopItemsConfig>) => void
   setBackground: (bg: Settings['background']) => void
   setTheme: (theme: Settings['theme']) => void
   importSettings: (settings: Settings) => void
@@ -30,7 +39,17 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>((set) => ({
   settings: defaultSettings,
 
-  hydrate: (settings) => set({ settings }),
+  hydrate: (settings) =>
+    set({
+      settings: {
+        ...defaultSettings,
+        ...settings,
+        topItems: {
+          ...defaultTopItems,
+          ...(settings.topItems ?? {}),
+        },
+      },
+    }),
 
   updateSettings: (updates) =>
     set((state) => ({
@@ -45,6 +64,14 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       },
     })),
 
+  updateTopItems: (updates) =>
+    set((state) => ({
+      settings: {
+        ...state.settings,
+        topItems: { ...state.settings.topItems, ...updates },
+      },
+    })),
+
   setBackground: (bg) =>
     set((state) => ({
       settings: { ...state.settings, background: bg },
@@ -56,6 +83,15 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     })),
 
   importSettings: (settings) => {
-    set({ settings })
+    set({
+      settings: {
+        ...defaultSettings,
+        ...settings,
+        topItems: {
+          ...defaultTopItems,
+          ...(settings.topItems ?? {}),
+        },
+      },
+    })
   },
 }))

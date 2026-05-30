@@ -1,4 +1,4 @@
-import { X, Settings, Plus, Clock, CloudSun, StickyNote } from 'lucide-react'
+import { X, Settings, Plus, Clock, CloudSun, StickyNote, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { useSettingsStore } from '../store/settingsStore'
 import { useLayoutStore } from '../store/layoutStore'
@@ -8,7 +8,7 @@ import ImportExport from './ImportExport'
 
 export default function SettingsPanel() {
   const [open, setOpen] = useState(false)
-  const { settings, updateWidgets, updateSettings } = useSettingsStore()
+  const { settings, updateWidgets, updateSettings, updateTopItems } = useSettingsStore()
   const { categories, addCategory } = useLayoutStore()
   const [newCat, setNewCat] = useState('')
 
@@ -153,6 +153,65 @@ export default function SettingsPanel() {
                     <StickyNote size={16} style={{ color: 'var(--accent)' }} />
                     <span className="text-sm" style={{ color: 'var(--text)' }}>Show Notes</span>
                   </label>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                  <Zap size={16} style={{ color: 'var(--accent)' }} />
+                  Top Items
+                </h3>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.topItems.enabled}
+                      onChange={(e) => updateTopItems({ enabled: e.target.checked })}
+                      className="w-4 h-4 rounded accent-[var(--accent)]"
+                    />
+                    <span className="text-sm" style={{ color: 'var(--text)' }}>Auto-rank most-used apps</span>
+                  </label>
+                  {settings.topItems.enabled && (
+                    <div className="ml-7 space-y-3">
+                      <div>
+                        <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          Items to show: {settings.topItems.count}
+                        </label>
+                        <input
+                          type="range"
+                          min={3}
+                          max={20}
+                          value={settings.topItems.count}
+                          onChange={(e) => updateTopItems({ count: parseInt(e.target.value) })}
+                          className="w-full accent-[var(--accent)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs block mb-1" style={{ color: 'var(--text-secondary)' }}>
+                          Reset click counts
+                        </label>
+                        <select
+                          value={settings.topItems.resetInterval}
+                          onChange={(e) =>
+                            updateTopItems({
+                              resetInterval: e.target.value as 'never' | 'weekly' | 'monthly',
+                              lastResetAt:
+                                e.target.value !== 'never' ? new Date().toISOString() : settings.topItems.lastResetAt,
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded-lg text-xs border"
+                          style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                        >
+                          <option value="never">Never</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </select>
+                      </div>
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        Rankings refresh every 5 minutes while the dashboard is open.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </section>
 

@@ -1,6 +1,7 @@
 import { ChevronDown, Pencil, Trash2, GripVertical } from 'lucide-react'
 import { useState } from 'react'
 import type { Category, AppItem } from '../types'
+import { TOP_ITEMS_ID } from '../types'
 import { useLayoutStore } from '../store/layoutStore'
 import { useAppStore } from '../store/appStore'
 import Tile from './Tile'
@@ -147,7 +148,7 @@ export default function CategoryGroup({
             >
               <Pencil size={14} />
             </button>
-            {category.id !== 'default' && (
+            {category.id !== 'default' && category.id !== TOP_ITEMS_ID && (
               <button
                 onClick={() => removeCategory(category.id)}
                 className="p-1 rounded transition-colors hover:opacity-80"

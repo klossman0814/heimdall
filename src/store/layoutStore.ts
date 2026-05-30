@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Category } from '../types'
+import { TOP_ITEMS_ID } from '../types'
 
 function genId() {
   return `cat_${Date.now()}`
@@ -13,10 +14,11 @@ interface LayoutState {
   removeCategory: (id: string) => void
   toggleCollapse: (id: string) => void
   reorderCategories: (ids: string[]) => void
+  ensureTopItemsCategory: () => void
   importCategories: (categories: Category[]) => void
 }
 
-export const useLayoutStore = create<LayoutState>((set) => ({
+export const useLayoutStore = create<LayoutState>((set, get) => ({
   categories: [{ id: 'default', name: 'Applications', collapsed: false, position: 0 }],
 
   hydrate: (categories) => set({ categories }),
@@ -39,12 +41,14 @@ export const useLayoutStore = create<LayoutState>((set) => ({
       ),
     })),
 
-  removeCategory: (id) =>
+  removeCategory: (id) => {
+    if (id === 'default' || id === TOP_ITEMS_ID) return
     set((state) => ({
       categories: state.categories
         .filter((c) => c.id !== id)
         .map((c, i) => ({ ...c, position: i })),
-    })),
+    }))
+  },
 
   toggleCollapse: (id) =>
     set((state) => ({
@@ -60,6 +64,22 @@ export const useLayoutStore = create<LayoutState>((set) => ({
         .filter((c): c is Category => c !== undefined)
         .map((c, i) => ({ ...c, position: i })),
     })),
+
+  ensureTopItemsCategory: () => {
+    const state = get()
+    if (state.categories.some((c) => c.id === TOP_ITEMS_ID)) return
+    set((s) => ({
+      categories: [
+        {
+          id: TOP_ITEMS_ID,
+          name: 'Top Items',
+          collapsed: false,
+          position: 0,
+        },
+        ...s.categories.map((c) => ({ ...c, position: c.position + 1 })),
+      ],
+    }))
+  },
 
   importCategories: (categories) => {
     set({ categories })
