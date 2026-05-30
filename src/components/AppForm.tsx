@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import type { AppItem } from '../types'
 import { useAppStore } from '../store/appStore'
 import { useLayoutStore } from '../store/layoutStore'
 import { TILE_COLORS } from '../utils/colors'
 import { resolveIconUrl, searchApps, findApp } from '../utils/icons'
-import { X } from 'lucide-react'
+import { X, Upload } from 'lucide-react'
 
 interface AppFormProps {
   app?: AppItem | null
@@ -33,8 +33,10 @@ export default function AppForm({ app, onClose }: AppFormProps) {
   const [suggestions, setSuggestions] = useState<ReturnType<typeof searchApps>>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [iconError, setIconError] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const suggestRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const known = findApp(name.trim())
@@ -92,6 +94,42 @@ export default function AppForm({ app, onClose }: AppFormProps) {
       addApp({ name: name.trim(), url: url.trim(), icon, color, categoryId, tileSize })
     }
     onClose()
+  }
+
+  function handleIconFile(file: File) {
+    if (!file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string
+      setIconPreview(dataUrl)
+      setIconError(false)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleIconFile(file)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback(() => {
+    setDragOver(false)
+  }, [])
+
+  function handleBrowseClick() {
+    fileInputRef.current?.click()
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) handleIconFile(file)
   }
 
   function handleUrlFromName() {
@@ -208,30 +246,55 @@ export default function AppForm({ app, onClose }: AppFormProps) {
 
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-              Icon URL (optional)
+              Icon
             </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={iconPreview}
-                onChange={(e) => { setIconPreview(e.target.value); setIconError(false) }}
-                placeholder="Auto-detected from name"
-                className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:border-[var(--accent)]"
-                style={{
-                  backgroundColor: 'var(--bg)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)',
-                }}
-              />
-              {iconPreview && !iconError && (
-                <img
-                  src={iconPreview}
-                  alt=""
-                  className="w-9 h-9 rounded-lg border shrink-0"
-                  style={{ borderColor: 'var(--border)' }}
-                  onError={() => setIconError(true)}
+            <div className="flex gap-2 mb-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={iconPreview}
+                  onChange={(e) => { setIconPreview(e.target.value); setIconError(false) }}
+                  placeholder="URL or drop an image below"
+                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:border-[var(--accent)]"
+                  style={{
+                    backgroundColor: 'var(--bg)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text)',
+                  }}
                 />
-              )}
+                {iconPreview && !iconError && (
+                  <img
+                    src={iconPreview}
+                    alt=""
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded border"
+                    style={{ borderColor: 'var(--border)' }}
+                    onError={() => setIconError(true)}
+                  />
+                )}
+              </div>
+            </div>
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={handleBrowseClick}
+              className="relative flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed p-4 cursor-pointer transition-colors"
+              style={{
+                borderColor: dragOver ? 'var(--accent)' : 'var(--border)',
+                backgroundColor: dragOver ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent',
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Upload size={18} style={{ color: 'var(--text-secondary)' }} />
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Drop an image here or click to browse
+              </span>
             </div>
           </div>
 
