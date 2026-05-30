@@ -1,0 +1,57 @@
+export const TILE_COLORS = [
+  { name: 'Indigo', value: '#6366f1' },
+  { name: 'Purple', value: '#8b5cf6' },
+  { name: 'Fuchsia', value: '#a855f7' },
+  { name: 'Pink', value: '#d946ef' },
+  { name: 'Rose', value: '#ec4899' },
+  { name: 'Red', value: '#ef4444' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Amber', value: '#f59e0b' },
+  { name: 'Yellow', value: '#eab308' },
+  { name: 'Lime', value: '#84cc16' },
+  { name: 'Green', value: '#22c55e' },
+  { name: 'Emerald', value: '#10b981' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Cyan', value: '#06b6d4' },
+  { name: 'Sky', value: '#0ea5e9' },
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Slate', value: '#64748b' },
+]
+
+export const BACKGROUNDS = {
+  colors: [
+    { name: 'Dark Slate', value: '#0f172a' },
+    { name: 'Dark Blue', value: '#0c1929' },
+    { name: 'Dark Purple', value: '#1a0a2e' },
+    { name: 'Dark Green', value: '#0a1f0a' },
+    { name: 'Charcoal', value: '#1a1a2e' },
+    { name: 'Navy', value: '#0a1628' },
+    { name: 'Warm Gray', value: '#2d2a24' },
+    { name: 'Light Gray', value: '#f1f5f9' },
+    { name: 'White', value: '#ffffff' },
+    { name: 'Warm White', value: '#faf8f5' },
+  ],
+  gradients: [
+    { name: 'Sunset', value: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' },
+    { name: 'Ocean', value: 'linear-gradient(135deg, #0a1628, #1a3a5c, #0a1628)' },
+    { name: 'Forest', value: 'linear-gradient(135deg, #0a1f0a, #1a3a1a, #0a2a1a)' },
+    { name: 'Twilight', value: 'linear-gradient(135deg, #1a0a2e, #2a1a3e, #1a0a2e)' },
+    { name: 'Nord', value: 'linear-gradient(135deg, #2e3440, #3b4252, #434c5e)' },
+    { name: 'Dracula', value: 'linear-gradient(135deg, #1a1a2e, #282a36, #44475a)' },
+    { name: 'Warm', value: 'linear-gradient(135deg, #2d2a24, #3d3529, #4a3f2e)' },
+    { name: 'Cyberpunk', value: 'linear-gradient(135deg, #0d0221, #1a0547, #120338)' },
+    { name: 'Aurora', value: 'linear-gradient(135deg, #001414, #002a2a, #004040)' },
+    { name: 'Slate', value: 'linear-gradient(135deg, #1e293b, #334155, #475569)' },
+  ],
+}
+
+export const BG_IMAGES = [
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920',
+  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1920',
+  'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920',
+  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1920',
+  'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920',
+  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920',
+  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920',
+  'https://images.unsplash.com/photo-1540206395-68808572332f?w=1920',
+]
