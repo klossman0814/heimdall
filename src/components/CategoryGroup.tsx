@@ -1,4 +1,4 @@
-import { ChevronDown, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, Pencil, Trash2, GripVertical } from 'lucide-react'
 import { useState } from 'react'
 import type { Category, AppItem } from '../types'
 import { useLayoutStore } from '../store/layoutStore'
@@ -15,7 +15,9 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
+  useSortable,
 } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface CategoryGroupProps {
   category: Category
@@ -36,6 +38,21 @@ export default function CategoryGroup({
   const { reorderApps } = useAppStore()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(category.name)
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id, data: { type: 'category' } })
+
+  const categoryStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -67,8 +84,17 @@ export default function CategoryGroup({
   const sortedApps = [...apps].sort((a, b) => a.position - b.position)
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-3 mb-4 group">
+    <div ref={setNodeRef} style={categoryStyle} className="mb-8">
+      <div className="flex items-center gap-2 mb-4 group">
+        <button
+          className="p-1 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--text-secondary)' }}
+          title="Drag to reorder category"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical size={16} />
+        </button>
         <button
           onClick={() => toggleCollapse(category.id)}
           className="transition-transform"

@@ -1,5 +1,17 @@
 import { useState } from 'react'
 import { Plus, LayoutGrid } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import type { AppItem } from '../types'
 import { useAppStore } from '../store/appStore'
 import { useLayoutStore } from '../store/layoutStore'
@@ -11,13 +23,30 @@ import Widgets from './Widgets'
 
 export default function Dashboard() {
   const { apps, removeApp } = useAppStore()
-  const { categories } = useLayoutStore()
+  const { categories, reorderCategories } = useLayoutStore()
   const { settings } = useSettingsStore()
   const [formOpen, setFormOpen] = useState(false)
   const [editingApp, setEditingApp] = useState<AppItem | null>(null)
   const [showAll] = useState(false)
 
   const sortedCats = [...categories].sort((a, b) => a.position - b.position)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
+
+  function handleCategoryDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = sortedCats.findIndex((c) => c.id === active.id)
+    const newIndex = sortedCats.findIndex((c) => c.id === over.id)
+    const reordered = [...sortedCats]
+    const [moved] = reordered.splice(oldIndex, 1)
+    reordered.splice(newIndex, 0, moved)
+
+    reorderCategories(reordered.map((c) => c.id))
+  }
 
   const bgStyle =
     settings.background.type === 'image'
@@ -67,20 +96,31 @@ export default function Dashboard() {
 
           <Widgets />
 
-          {sortedCats.map((cat) => {
-            const catApps = apps.filter((a) => a.categoryId === cat.id)
-            if (!showAll && catApps.length === 0) return null
-            return (
-              <CategoryGroup
-                key={cat.id}
-                category={cat}
-                apps={catApps}
-                onEditApp={(app) => { setEditingApp(app); setFormOpen(true) }}
-                onRemoveApp={removeApp}
-                tileSize="md"
-              />
-            )
-          })}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleCategoryDragEnd}
+          >
+            <SortableContext
+              items={sortedCats.map((c) => c.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {sortedCats.map((cat) => {
+                const catApps = apps.filter((a) => a.categoryId === cat.id)
+                if (!showAll && catApps.length === 0) return null
+                return (
+                  <CategoryGroup
+                    key={cat.id}
+                    category={cat}
+                    apps={catApps}
+                    onEditApp={(app) => { setEditingApp(app); setFormOpen(true) }}
+                    onRemoveApp={removeApp}
+                    tileSize="md"
+                  />
+                )
+              })}
+            </SortableContext>
+          </DndContext>
 
           {apps.length === 0 && (
             <div className="text-center py-20">
