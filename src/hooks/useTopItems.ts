@@ -30,13 +30,12 @@ export function evaluateTopItems() {
     return
   }
 
-  const count = settings.topItems.count
+  const count = Math.max(1, settings.topItems.count)
   const eligible = apps.filter((a) => a.categoryId !== TOP_ITEMS_ID)
   const sorted = [...eligible].sort((a, b) => b.clickCount - a.clickCount)
   const topIds = new Set(sorted.slice(0, count).map((a) => a.id))
 
   const currentTop = apps.filter((a) => a.categoryId === TOP_ITEMS_ID)
-  const currentTopIds = new Set(currentTop.map((a) => a.id))
 
   let rank = 0
   for (const app of sorted) {
