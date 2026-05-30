@@ -1,0 +1,12 @@
+services:
+  heimdall:
+    build: .
+    container_name: heimdall
+    ports:
+      - "8086:8086"
+    volumes:
+      - heimdall-data:/data
+    restart: unless-stopped
+
+volumes:
+  heimdall-data:

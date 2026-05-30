@@ -8,6 +8,8 @@ export default function ImportExport() {
   const { exportApps, importApps } = useAppStore()
   const categories = useLayoutStore((s) => s.categories)
   const settings = useSettingsStore((s) => s.settings)
+  const importCategories = useLayoutStore((s) => s.importCategories)
+  const importSettings = useSettingsStore((s) => s.importSettings)
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleExport() {
@@ -35,14 +37,8 @@ export default function ImportExport() {
       try {
         const data = JSON.parse(reader.result as string)
         if (data.apps) importApps(data.apps)
-        if (data.categories) {
-          localStorage.setItem('heimdall-categories', JSON.stringify(data.categories))
-          window.location.reload()
-        }
-        if (data.settings) {
-          localStorage.setItem('heimdall-settings', JSON.stringify(data.settings))
-          window.location.reload()
-        }
+        if (data.categories) importCategories(data.categories)
+        if (data.settings) importSettings(data.settings)
       } catch {
         alert('Invalid backup file.')
       }

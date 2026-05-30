@@ -2,19 +2,6 @@ import { create } from 'zustand'
 import type { AppItem } from '../types'
 import { resolveIconUrl } from '../utils/icons'
 
-function loadApps(): AppItem[] {
-  try {
-    const raw = localStorage.getItem('heimdall-apps')
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function saveApps(apps: AppItem[]) {
-  localStorage.setItem('heimdall-apps', JSON.stringify(apps))
-}
-
 let nextId = Date.now()
 function genId() {
   return `app_${nextId++}`
@@ -46,6 +33,7 @@ function pickColor(index: number): string {
 
 interface AppState {
   apps: AppItem[]
+  hydrate: (apps: AppItem[]) => void
   addApp: (app: Omit<AppItem, 'id' | 'position'>) => void
   updateApp: (id: string, updates: Partial<AppItem>) => void
   removeApp: (id: string) => void
@@ -55,8 +43,10 @@ interface AppState {
   importApps: (apps: AppItem[]) => void
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  apps: loadApps(),
+export const useAppStore = create<AppState>((set, get) => ({
+  apps: [],
+
+  hydrate: (apps) => set({ apps }),
 
   addApp: (app) =>
     set((state) => {
@@ -72,59 +62,44 @@ export const useAppStore = create<AppState>((set) => ({
         color,
         position: maxPos + 1,
       }
-      const apps = [...state.apps, newApp]
-      saveApps(apps)
-      return { apps }
+      return { apps: [...state.apps, newApp] }
     }),
 
   updateApp: (id, updates) =>
-    set((state) => {
-      const apps = state.apps.map((a) =>
+    set((state) => ({
+      apps: state.apps.map((a) =>
         a.id === id
           ? { ...a, ...updates, icon: updates.icon || (updates.name ? resolveIcon(updates.name) || a.icon : a.icon) }
           : a
-      )
-      saveApps(apps)
-      return { apps }
-    }),
+      ),
+    })),
 
   removeApp: (id) =>
-    set((state) => {
-      const apps = state.apps.filter((a) => a.id !== id)
-      saveApps(apps)
-      return { apps }
-    }),
+    set((state) => ({
+      apps: state.apps.filter((a) => a.id !== id),
+    })),
 
   reorderApps: (categoryId, appIds) =>
-    set((state) => {
-      const apps = state.apps.map((a) =>
+    set((state) => ({
+      apps: state.apps.map((a) =>
         a.categoryId === categoryId
           ? { ...a, position: appIds.indexOf(a.id) }
           : a
-      )
-      saveApps(apps)
-      return { apps }
-    }),
+      ),
+    })),
 
   moveAppToCategory: (appId, categoryId, position) =>
-    set((state) => {
-      const apps = state.apps.map((a) =>
+    set((state) => ({
+      apps: state.apps.map((a) =>
         a.id === appId ? { ...a, categoryId, position } : a
-      )
-      saveApps(apps)
-      return { apps }
-    }),
+      ),
+    })),
 
   exportApps: () => {
-    try {
-      return JSON.parse(localStorage.getItem('heimdall-apps') || '[]')
-    } catch {
-      return []
-    }
+    return get().apps
   },
 
   importApps: (apps) => {
-    saveApps(apps)
     set({ apps })
   },
 }))

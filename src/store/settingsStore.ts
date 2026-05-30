@@ -17,59 +17,45 @@ const defaultSettings: Settings = {
   },
 }
 
-function loadSettings(): Settings {
-  try {
-    const raw = localStorage.getItem('heimdall-settings')
-    if (raw) {
-      return { ...defaultSettings, ...JSON.parse(raw) }
-    }
-  } catch { /* ignore */ }
-  return defaultSettings
-}
-
-function saveSettings(s: Settings) {
-  localStorage.setItem('heimdall-settings', JSON.stringify(s))
-}
-
 interface SettingsState {
   settings: Settings
+  hydrate: (settings: Settings) => void
   updateSettings: (updates: Partial<Settings>) => void
   updateWidgets: (updates: Partial<Settings['widgets']>) => void
   setBackground: (bg: Settings['background']) => void
   setTheme: (theme: Settings['theme']) => void
+  importSettings: (settings: Settings) => void
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
-  settings: loadSettings(),
+  settings: defaultSettings,
+
+  hydrate: (settings) => set({ settings }),
 
   updateSettings: (updates) =>
-    set((state) => {
-      const settings = { ...state.settings, ...updates }
-      saveSettings(settings)
-      return { settings }
-    }),
+    set((state) => ({
+      settings: { ...state.settings, ...updates },
+    })),
 
   updateWidgets: (updates) =>
-    set((state) => {
-      const settings = {
+    set((state) => ({
+      settings: {
         ...state.settings,
         widgets: { ...state.settings.widgets, ...updates },
-      }
-      saveSettings(settings)
-      return { settings }
-    }),
+      },
+    })),
 
   setBackground: (bg) =>
-    set((state) => {
-      const settings = { ...state.settings, background: bg }
-      saveSettings(settings)
-      return { settings }
-    }),
+    set((state) => ({
+      settings: { ...state.settings, background: bg },
+    })),
 
   setTheme: (theme) =>
-    set((state) => {
-      const settings = { ...state.settings, theme }
-      saveSettings(settings)
-      return { settings }
-    }),
+    set((state) => ({
+      settings: { ...state.settings, theme },
+    })),
+
+  importSettings: (settings) => {
+    set({ settings })
+  },
 }))
