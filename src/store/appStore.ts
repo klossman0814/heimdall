@@ -37,6 +37,7 @@ interface AppState {
   addApp: (app: Omit<AppItem, 'id' | 'position' | 'clickCount' | 'previousCategoryId'>) => void
   updateApp: (id: string, updates: Partial<AppItem>) => void
   removeApp: (id: string) => void
+  setCategoryAppColors: (categoryId: string, color: string) => void
   reorderApps: (categoryId: string, appIds: string[]) => void
   moveAppToCategory: (appId: string, categoryId: string, position: number) => void
   incrementClickCount: (appId: string) => void
@@ -88,6 +89,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   removeApp: (id) =>
     set((state) => ({
       apps: state.apps.filter((a) => a.id !== id),
+    })),
+
+  setCategoryAppColors: (categoryId, color) =>
+    set((state) => ({
+      apps: state.apps.map((a) =>
+        a.categoryId === categoryId ? { ...a, color } : a
+      ),
     })),
 
   reorderApps: (categoryId, appIds) =>

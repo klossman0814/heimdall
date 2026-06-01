@@ -9,8 +9,9 @@ function genId() {
 interface LayoutState {
   categories: Category[]
   hydrate: (categories: Category[]) => void
-  addCategory: (name: string) => void
+  addCategory: (name: string, color?: string) => void
   renameCategory: (id: string, name: string) => void
+  setCategoryColor: (id: string, color: string | undefined) => void
   removeCategory: (id: string) => void
   toggleCollapse: (id: string) => void
   reorderCategories: (ids: string[]) => void
@@ -23,13 +24,14 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
 
   hydrate: (categories) => set({ categories }),
 
-  addCategory: (name) =>
+  addCategory: (name, color) =>
     set((state) => {
       const cat: Category = {
         id: genId(),
         name,
         collapsed: false,
         position: state.categories.length,
+        ...(color ? { color } : {}),
       }
       return { categories: [...state.categories, cat] }
     }),
@@ -38,6 +40,13 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
     set((state) => ({
       categories: state.categories.map((c) =>
         c.id === id ? { ...c, name } : c
+      ),
+    })),
+
+  setCategoryColor: (id, color) =>
+    set((state) => ({
+      categories: state.categories.map((c) =>
+        c.id === id ? { ...c, ...(color ? { color } : { color: undefined }) } : c
       ),
     })),
 

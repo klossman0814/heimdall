@@ -25,6 +25,7 @@ export interface Category {
   name: string
   collapsed: boolean
   position: number
+  color?: string
 }
 
 export type Theme = 'dark' | 'light' | 'system'

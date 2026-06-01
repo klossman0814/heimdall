@@ -38,17 +38,84 @@ export default function Dashboard() {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  function handleCategoryDragEnd(event: DragEndEvent) {
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = sortedCats.findIndex((c) => c.id === active.id)
-    const newIndex = sortedCats.findIndex((c) => c.id === over.id)
-    const reordered = [...sortedCats]
-    const [moved] = reordered.splice(oldIndex, 1)
-    reordered.splice(newIndex, 0, moved)
+    const activeType = active.data.current?.type
 
-    reorderCategories(reordered.map((c) => c.id))
+    if (activeType === 'category') {
+      if (over.data.current?.type !== 'category') return
+      const oldIndex = sortedCats.findIndex((c) => c.id === active.id)
+      const newIndex = sortedCats.findIndex((c) => c.id === over.id)
+      const reordered = [...sortedCats]
+      const [moved] = reordered.splice(oldIndex, 1)
+      reordered.splice(newIndex, 0, moved)
+
+      reorderCategories(reordered.map((c) => c.id))
+      return
+    }
+
+    if (activeType === 'app') {
+      const activeApp = active.data.current?.app as AppItem | undefined
+      if (!activeApp) return
+
+      const overType = over.data.current?.type
+      let targetCategoryId: string
+      let targetIndex: number
+
+      if (overType === 'app') {
+        const overApp = over.data.current?.app as AppItem
+        targetCategoryId = overApp.categoryId
+
+        const targetApps = apps
+          .filter((a) => a.categoryId === targetCategoryId && a.id !== activeApp.id)
+          .sort((a, b) => a.position - b.position)
+
+        const overIndex = targetApps.findIndex((a) => a.id === overApp.id)
+        targetIndex = overIndex >= 0 ? overIndex : targetApps.length
+      } else if (overType === 'category') {
+        targetCategoryId = over.id.toString()
+        const targetApps = apps
+          .filter((a) => a.categoryId === targetCategoryId && a.id !== activeApp.id)
+          .sort((a, b) => a.position - b.position)
+        targetIndex = targetApps.length
+      } else {
+        return
+      }
+
+      if (activeApp.categoryId === targetCategoryId) {
+        const catApps = apps
+          .filter((a) => a.categoryId === targetCategoryId)
+          .sort((a, b) => a.position - b.position)
+
+        const activeIndex = catApps.findIndex((a) => a.id === activeApp.id)
+        const reordered = catApps.map((a) => a.id)
+        reordered.splice(activeIndex, 1)
+        reordered.splice(targetIndex, 0, activeApp.id)
+
+        const { reorderApps } = useAppStore.getState()
+        reorderApps(targetCategoryId, reordered)
+      } else {
+        const sourceCategoryId = activeApp.categoryId
+        const { moveAppToCategory, reorderApps } = useAppStore.getState()
+
+        moveAppToCategory(activeApp.id, targetCategoryId, targetIndex)
+
+        const state = useAppStore.getState()
+        const targetIds = state.apps
+          .filter((a) => a.categoryId === targetCategoryId)
+          .sort((a, b) => a.position - b.position)
+          .map((a) => a.id)
+        reorderApps(targetCategoryId, targetIds)
+
+        const sourceIds = state.apps
+          .filter((a) => a.categoryId === sourceCategoryId)
+          .sort((a, b) => a.position - b.position)
+          .map((a) => a.id)
+        reorderApps(sourceCategoryId, sourceIds)
+      }
+    }
   }
 
   const bgStyle =
@@ -102,7 +169,7 @@ export default function Dashboard() {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragEnd={handleCategoryDragEnd}
+            onDragEnd={handleDragEnd}
           >
             <SortableContext
               items={sortedCats.map((c) => c.id)}

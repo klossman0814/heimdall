@@ -1,18 +1,11 @@
-import { ChevronDown, Pencil, Trash2, GripVertical } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronDown, Pencil, Trash2, GripVertical, Palette } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import type { Category, AppItem } from '../types'
 import { TOP_ITEMS_ID } from '../types'
 import { useLayoutStore } from '../store/layoutStore'
 import { useAppStore } from '../store/appStore'
+import { TILE_COLORS } from '../utils/colors'
 import Tile from './Tile'
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -35,10 +28,12 @@ export default function CategoryGroup({
   onRemoveApp,
   tileSize,
 }: CategoryGroupProps) {
-  const { toggleCollapse, renameCategory, removeCategory } = useLayoutStore()
-  const { reorderApps } = useAppStore()
+  const { toggleCollapse, renameCategory, removeCategory, setCategoryColor } = useLayoutStore()
+  const { setCategoryAppColors } = useAppStore()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(category.name)
+  const [colorOpen, setColorOpen] = useState(false)
+  const colorRef = useRef<HTMLDivElement>(null)
 
   const {
     attributes,
@@ -55,9 +50,15 @@ export default function CategoryGroup({
     opacity: isDragging ? 0.4 : 1,
   }
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  )
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (colorRef.current && !colorRef.current.contains(e.target as Node)) {
+        setColorOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   function handleRename() {
     if (name.trim()) {
@@ -66,26 +67,13 @@ export default function CategoryGroup({
     setEditing(false)
   }
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
-
-    const oldIndex = apps.findIndex((a) => a.id === active.id)
-    const newIndex = apps.findIndex((a) => a.id === over.id)
-    const reordered = [...apps]
-    const [moved] = reordered.splice(oldIndex, 1)
-    reordered.splice(newIndex, 0, moved)
-
-    reorderApps(
-      category.id,
-      reordered.map((a) => a.id)
-    )
-  }
-
   const sortedApps = [...apps].sort((a, b) => a.position - b.position)
 
   return (
     <div ref={setNodeRef} style={categoryStyle} className="mb-8">
+      {category.color && (
+        <div className="h-1 rounded-full mb-2" style={{ backgroundColor: category.color }} />
+      )}
       <div className="flex items-center gap-2 mb-4 group">
         <button
           className="p-1 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
@@ -140,6 +128,53 @@ export default function CategoryGroup({
 
         <div className="relative ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex gap-1">
+            <div className="relative">
+              <button
+                onClick={() => setColorOpen(!colorOpen)}
+                className="p-1 rounded transition-colors hover:opacity-80"
+                style={{ color: category.color || 'var(--text-secondary)' }}
+                title="Set category color"
+              >
+                <Palette size={14} />
+              </button>
+              {colorOpen && (
+                <div
+                  ref={colorRef}
+                  className="absolute top-7 right-0 p-2 rounded-lg border shadow-lg z-30 grid grid-cols-6 gap-1.5"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderColor: 'var(--border)',
+                    boxShadow: 'var(--shadow-lg)',
+                  }}
+                >
+                  <button
+                    onClick={() => { setCategoryColor(category.id, undefined); setColorOpen(false) }}
+                    className="w-5 h-5 rounded flex items-center justify-center text-[9px]"
+                    style={{ backgroundColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                    title="No color (use tile defaults)"
+                  >
+                    ∅
+                  </button>
+                  {TILE_COLORS.map((c) => (
+                    <button
+                      key={c.value}
+                      onClick={() => {
+                        setCategoryColor(category.id, c.value)
+                        setCategoryAppColors(category.id, c.value)
+                        setColorOpen(false)
+                      }}
+                      className="w-5 h-5 rounded transition-transform hover:scale-110"
+                      style={{
+                        backgroundColor: c.value,
+                        outline: category.color === c.value ? '2px solid var(--accent)' : 'none',
+                        outlineOffset: '2px',
+                      }}
+                      title={c.name}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setEditing(true)}
               className="p-1 rounded transition-colors hover:opacity-80"
@@ -163,27 +198,22 @@ export default function CategoryGroup({
       </div>
 
       {!category.collapsed && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+        <SortableContext
+          items={sortedApps.map((a) => a.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <SortableContext
-            items={sortedApps.map((a) => a.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className={`tile-grid ${tileSize === 'sm' ? 'tile-sm' : tileSize === 'lg' ? 'tile-lg' : ''}`}>
-              {sortedApps.map((app) => (
-                <Tile
-                  key={app.id}
-                  app={app}
-                  onEdit={onEditApp}
-                  onRemove={onRemoveApp}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+          <div className={`tile-grid ${tileSize === 'sm' ? 'tile-sm' : tileSize === 'lg' ? 'tile-lg' : ''}`}>
+            {sortedApps.map((app) => (
+              <Tile
+                key={app.id}
+                app={app}
+                categoryColor={category.color}
+                onEdit={onEditApp}
+                onRemove={onRemoveApp}
+              />
+            ))}
+          </div>
+        </SortableContext>
       )}
 
       {!category.collapsed && apps.length === 0 && (

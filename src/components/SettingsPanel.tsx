@@ -1,7 +1,9 @@
 import { X, Settings, Plus, Clock, CloudSun, StickyNote, Zap } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSettingsStore } from '../store/settingsStore'
 import { useLayoutStore } from '../store/layoutStore'
+import { useAppStore } from '../store/appStore'
+import { TILE_COLORS } from '../utils/colors'
 import ThemeToggle from './ThemeToggle'
 import BackgroundPicker from './BackgroundPicker'
 import ImportExport from './ImportExport'
@@ -9,13 +11,28 @@ import ImportExport from './ImportExport'
 export default function SettingsPanel() {
   const [open, setOpen] = useState(false)
   const { settings, updateWidgets, updateSettings, updateTopItems } = useSettingsStore()
-  const { categories, addCategory } = useLayoutStore()
+  const { categories, addCategory, setCategoryColor } = useLayoutStore()
+  const { setCategoryAppColors } = useAppStore()
   const [newCat, setNewCat] = useState('')
+  const [newCatColor, setNewCatColor] = useState('')
+  const [openCatColor, setOpenCatColor] = useState<string | null>(null)
+  const colorRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (colorRef.current && !colorRef.current.contains(e.target as Node)) {
+        setOpenCatColor(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   function handleAddCategory() {
     if (newCat.trim()) {
-      addCategory(newCat.trim())
+      addCategory(newCat.trim(), newCatColor || undefined)
       setNewCat('')
+      setNewCatColor('')
     }
   }
 
@@ -233,6 +250,22 @@ export default function SettingsPanel() {
                       className="flex-1 px-3 py-2 rounded-lg text-sm border"
                       style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
                     />
+                    <div className="flex gap-1 items-center">
+                      {TILE_COLORS.slice(0, 6).map((c) => (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() => setNewCatColor(newCatColor === c.value ? '' : c.value)}
+                          className="w-5 h-5 rounded transition-transform hover:scale-110"
+                          style={{
+                            backgroundColor: c.value,
+                            outline: newCatColor === c.value ? '2px solid var(--accent)' : 'none',
+                            outlineOffset: '1px',
+                          }}
+                          title={c.name}
+                        />
+                      ))}
+                    </div>
                     <button
                       onClick={handleAddCategory}
                       className="px-3 py-2 rounded-lg text-sm text-white"
@@ -243,13 +276,57 @@ export default function SettingsPanel() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {categories.map((c) => (
-                      <span
-                        key={c.id}
-                        className="px-3 py-1 rounded-full text-xs"
+                      <div key={c.id} className="relative flex items-center gap-1.5 px-3 py-1 rounded-full text-xs"
                         style={{ backgroundColor: 'var(--bg)', color: 'var(--text-secondary)' }}
                       >
+                        <button
+                          onClick={() => setOpenCatColor(openCatColor === c.id ? null : c.id)}
+                          className="w-3 h-3 rounded-full shrink-0 transition-transform hover:scale-125"
+                          style={{
+                            backgroundColor: c.color || 'var(--border)',
+                            outline: c.color ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                          }}
+                          title="Change category color"
+                        />
                         {c.name}
-                      </span>
+                        {openCatColor === c.id && (
+                          <div
+                            ref={colorRef}
+                            className="absolute top-full left-0 mt-1 p-2 rounded-lg border shadow-lg z-30 grid grid-cols-6 gap-1.5"
+                            style={{
+                              backgroundColor: 'var(--bg-card)',
+                              borderColor: 'var(--border)',
+                              boxShadow: 'var(--shadow-lg)',
+                            }}
+                          >
+                            <button
+                              onClick={() => { setCategoryColor(c.id, undefined); setOpenCatColor(null) }}
+                              className="w-5 h-5 rounded flex items-center justify-center text-[9px]"
+                              style={{ backgroundColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                              title="No color"
+                            >
+                              ∅
+                            </button>
+                            {TILE_COLORS.map((tc) => (
+                              <button
+                                key={tc.value}
+                                onClick={() => {
+                                  setCategoryColor(c.id, tc.value)
+                                  setCategoryAppColors(c.id, tc.value)
+                                  setOpenCatColor(null)
+                                }}
+                                className="w-5 h-5 rounded transition-transform hover:scale-110"
+                                style={{
+                                  backgroundColor: tc.value,
+                                  outline: c.color === tc.value ? '2px solid var(--accent)' : 'none',
+                                  outlineOffset: '1px',
+                                }}
+                                title={tc.name}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>

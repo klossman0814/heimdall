@@ -7,6 +7,7 @@ import { useAppStore } from '../store/appStore'
 
 interface TileProps {
   app: AppItem
+  categoryColor?: string
   onEdit: (app: AppItem) => void
   onRemove: (id: string) => void
 }
@@ -47,7 +48,7 @@ function TileIcon({ app }: { app: AppItem }) {
   )
 }
 
-export default function Tile({ app, onEdit, onRemove }: TileProps) {
+export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -66,6 +67,13 @@ export default function Tile({ app, onEdit, onRemove }: TileProps) {
     opacity: isDragging ? 0.5 : 1,
   }
 
+  const isDraggingRef = useRef(false)
+  useEffect(() => {
+    if (isDragging) {
+      isDraggingRef.current = true
+    }
+  }, [isDragging])
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -76,37 +84,57 @@ export default function Tile({ app, onEdit, onRemove }: TileProps) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  const resolvedColor = app.color || categoryColor || '#6366f1'
   const sizeClasses = app.tileSize === 'sm' ? 'p-3' : app.tileSize === 'lg' ? 'p-6' : 'p-4'
 
   function handleOpen() {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false
+      return
+    }
     if (!app.url) return
     useAppStore.getState().incrementClickCount(app.id)
     window.open(app.url.startsWith('http') ? app.url : `https://${app.url}`, '_blank')
+  }
+
+  function handleClick(e: React.MouseEvent) {
+    if (!isDragging) {
+      e.stopPropagation()
+      handleOpen()
+    }
   }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative group rounded-xl cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg ${sizeClasses}`}
-      onClick={handleOpen}
+      className={`relative group rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-105 hover:shadow-lg ${sizeClasses}`}
+      {...attributes}
+      {...listeners}
+      onClick={handleClick}
     >
       <div
         className="absolute inset-0 rounded-xl opacity-90 transition-opacity group-hover:opacity-100"
-        style={{ backgroundColor: app.color }}
+        style={{ backgroundColor: resolvedColor }}
       />
       <div className="absolute inset-0 rounded-xl bg-black/10" />
 
       <div className="relative z-10 flex flex-col items-center gap-2">
-        <button
-          className="absolute -top-1 -left-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-20"
+        {categoryColor && !app.color && (
+          <div
+            className="absolute top-1 left-1 px-1 py-0.5 rounded text-[9px] uppercase tracking-wider font-semibold z-20"
+            style={{ backgroundColor: 'rgba(0,0,0,0.3)', color: 'rgba(255,255,255,0.8)' }}
+            title="Using category color"
+          >
+            cat
+          </div>
+        )}
+        <div
+          className="absolute -top-1 -left-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
           style={{ backgroundColor: 'var(--bg-card)' }}
-          onClick={(e) => e.stopPropagation()}
-          {...attributes}
-          {...listeners}
         >
           <GripVertical size={14} style={{ color: 'var(--text-secondary)' }} />
-        </button>
+        </div>
 
         <div
           className="absolute -top-1 -right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"

@@ -22,9 +22,11 @@ export default function AppForm({ app, onClose }: AppFormProps) {
   const updateApp = useAppStore((s) => s.updateApp)
   const categories = useLayoutStore((s) => s.categories)
 
+  const initCategory = categories.find((c) => c.id === (app?.categoryId || categories[0]?.id || 'default'))
+  const initColor = app?.color || initCategory?.color || TILE_COLORS[0].value
   const [name, setName] = useState(app?.name || '')
   const [url, setUrl] = useState(app?.url || '')
-  const [color, setColor] = useState(app?.color || TILE_COLORS[0].value)
+  const [color, setColor] = useState(initColor)
   const [categoryId, setCategoryId] = useState(app?.categoryId || categories[0]?.id || 'default')
   const [tileSize, setTileSize] = useState<'sm' | 'md' | 'lg'>(app?.tileSize || 'md')
 
@@ -37,6 +39,7 @@ export default function AppForm({ app, onClose }: AppFormProps) {
   const nameRef = useRef<HTMLInputElement>(null)
   const suggestRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const didManualColor = useRef(false)
 
   useEffect(() => {
     const known = findApp(name.trim())
@@ -307,7 +310,7 @@ export default function AppForm({ app, onClose }: AppFormProps) {
                 <button
                   key={c.value}
                   type="button"
-                  onClick={() => setColor(c.value)}
+                  onClick={() => { didManualColor.current = true; setColor(c.value) }}
                   className="w-7 h-7 rounded-lg transition-transform hover:scale-110"
                   style={{
                     backgroundColor: c.value,
@@ -330,7 +333,7 @@ export default function AppForm({ app, onClose }: AppFormProps) {
               <input
                 type="color"
                 value={color}
-                onChange={(e) => setColor(e.target.value)}
+                onChange={(e) => { didManualColor.current = true; setColor(e.target.value) }}
                 className="mt-2 w-full h-8 rounded cursor-pointer"
               />
             )}
@@ -343,7 +346,14 @@ export default function AppForm({ app, onClose }: AppFormProps) {
               </label>
               <select
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                onChange={(e) => {
+                  const newCatId = e.target.value
+                  setCategoryId(newCatId)
+                  if (!app && !didManualColor.current) {
+                    const cat = categories.find((c) => c.id === newCatId)
+                    if (cat?.color) setColor(cat.color)
+                  }
+                }}
                 className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
                 style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' }}
               >
