@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { useSettingsStore } from './store/settingsStore'
+import { useAuthStore } from './store/authStore'
 import { useApiData } from './hooks/useApiData'
 import Dashboard from './components/Dashboard'
 import SettingsPanel from './components/SettingsPanel'
+import LoginPage from './components/LoginPage'
+import SetupPage from './components/SetupPage'
 
 function useTheme() {
   const theme = useSettingsStore((s) => s.settings.theme)
@@ -32,7 +35,47 @@ function useTheme() {
 
 export default function App() {
   useTheme()
+  const { currentUser, needsSetup, loading, checkSetup } = useAuthStore()
   const { loaded } = useApiData()
+
+  useEffect(() => {
+    checkSetup()
+  }, [checkSetup])
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          backgroundColor: 'var(--bg)',
+          color: 'var(--text)',
+          fontFamily: 'system-ui, sans-serif',
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              border: '3px solid var(--border)',
+              borderTopColor: 'var(--accent)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 16px',
+            }}
+          />
+          <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Loading Heimdall...</div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        </div>
+      </div>
+    )
+  }
+
+  if (needsSetup) return <SetupPage />
+  if (!currentUser) return <LoginPage />
 
   if (!loaded) {
     return (
