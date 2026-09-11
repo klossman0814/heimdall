@@ -74,20 +74,3 @@ export interface Settings {
   widgets: WidgetConfig
   topItems: TopItemsConfig
 }
-
-export interface User {
-  id: string
-  name: string
-  isAdmin: boolean
-}
-
-export interface UserData extends User {
-  pinHash: string | null
-  apps: AppItem[]
-  categories: Category[]
-  settings: Settings
-}
-
-export interface StoredData {
-  users: Record<string, UserData>
-}

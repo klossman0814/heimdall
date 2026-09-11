@@ -1,14 +1,12 @@
-import { X, Settings, Plus, Clock, CloudSun, StickyNote, Zap, LogOut, Shield } from 'lucide-react'
+import { X, Settings, Plus, Clock, CloudSun, StickyNote, Zap } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useSettingsStore } from '../store/settingsStore'
 import { useLayoutStore } from '../store/layoutStore'
 import { useAppStore } from '../store/appStore'
-import { useAuthStore } from '../store/authStore'
 import { TILE_COLORS } from '../utils/colors'
 import ThemeToggle from './ThemeToggle'
 import BackgroundPicker from './BackgroundPicker'
 import ImportExport from './ImportExport'
-import UserManagement from './UserManagement'
 
 export default function SettingsPanel() {
   const [open, setOpen] = useState(false)
@@ -351,73 +349,6 @@ export default function SettingsPanel() {
                   Use %s as the query placeholder. Only used when search provider is set to Custom.
                 </p>
               </section>
-
-              <section>
-                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-                  <Shield size={16} style={{ color: 'var(--accent)' }} />
-                  Account
-                </h3>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--bg)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--accent)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 16,
-                      fontWeight: 600,
-                      color: '#fff',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {useAuthStore.getState().currentUser?.name?.charAt(0).toUpperCase() || '?'}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
-                      {useAuthStore.getState().currentUser?.name}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                      {useAuthStore.getState().currentUser?.isAdmin ? 'Admin' : 'User'}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { useAuthStore.getState().logout(); setOpen(false) }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      padding: '6px 12px',
-                      borderRadius: 8,
-                      border: '1px solid var(--border)',
-                      backgroundColor: 'transparent',
-                      color: 'var(--text-secondary)',
-                      fontSize: 12,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <LogOut size={14} /> Sign Out
-                  </button>
-                </div>
-              </section>
-
-              {useAuthStore.getState().currentUser?.isAdmin && (
-                <section>
-                  <UserManagement />
-                </section>
-              )}
 
               <section>
                 <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>
