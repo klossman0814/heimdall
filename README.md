@@ -23,6 +23,7 @@ A modern replacement for the [original Heimdall](https://github.com/linuxserver/
 ## Features
 
 - **App tiles** — Add links to your services with auto-resolved icons (110+ apps via Simple Icons), custom colors, and Small/Medium/Large sizes
+- **Icons pulled from the app's own website** — One click reads the site's `apple-touch-icon` / `rel="icon"` / web-manifest and embeds the real logo in your dashboard
 - **Categories** — Organize apps into collapsible groups; rename or delete as needed
 - **Drag & drop** — Reorder apps within a category by long-pressing and dragging
 - **Smart suggestions** — Type an app name and get instant suggestions with icon preview; "Guess" button auto-fills the URL
@@ -86,6 +87,25 @@ Open `http://localhost:8086` in your browser.
 3. The icon URL auto-fills from Simple Icons CDN; you can override it
 4. Optionally set a color, category, and tile size
 
+### Pulling an icon from the app's website
+
+Enter the app's URL and hit **Fetch from site** next to the Icon field. Heimdall
+asks the bundled server to open that URL, read the icons the page declares
+(`apple-touch-icon`, `rel="icon"`, the web manifest, falling back to
+`/favicon.ico`) and embed the winner straight into the tile — so the icon keeps
+working even when the service is offline.
+
+- Works for LAN-only addresses such as `http://192.168.1.5:8096` or `plex.lan`, because the server does the fetching — the browser alone cannot read another origin's HTML (CORS).
+- The lookup is deliberately bounded: 8 second timeout, ≤4 redirects, and an icon larger than 512KB is refused so your saved data stays small.
+- Link-local/metadata addresses (`169.254.0.0/16`) and multicast targets are rejected.
+- If the server is not in front of the page (plain `npm run dev` without it, or static hosting), Heimdall falls back to a public favicon service by hostname. That only works for internet-reachable domains, and stores a remote URL instead of an embedded image.
+
+In development the Vite dev server proxies `/api/fetch-icon` to
+`http://localhost:8086` (override with `HEIMDALL_API_URL`), so run
+`node server/index.js` alongside `npm run dev` to exercise the real lookup. Only
+that one endpoint is proxied, so the dev server never touches a running
+container's stored dashboard data.
+
 ### Search provider
 
 Open the settings panel (gear icon in the top-right) and choose between Google, Bing, DuckDuckGo, or enter a custom search URL.
@@ -104,6 +124,7 @@ Choose from solid colors, gradients, or pre-selected Unsplash images. You can al
 | State | [Zustand 5](https://github.com/pmndrs/zustand) |
 | Drag & drop | [@dnd-kit](https://dndkit.com) |
 | Icons | [Lucide](https://lucide.dev) (UI) + [Simple Icons](https://simpleicons.org) CDN (app icons) |
+| Website icons | `GET /api/fetch-icon` (Express) with a Google favicon-service fallback |
 | Weather | [Open-Meteo](https://open-meteo.com) (free, no API key) |
 | Docker | `node:20-alpine` → `nginx:alpine` multi-stage build |
 | Port | `8086` |

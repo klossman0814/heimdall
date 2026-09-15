@@ -4,7 +4,8 @@ import { useAppStore } from '../store/appStore'
 import { useLayoutStore } from '../store/layoutStore'
 import { TILE_COLORS } from '../utils/colors'
 import { resolveIconUrl, searchApps, findApp } from '../utils/icons'
-import { X, Upload } from 'lucide-react'
+import { fetchIconFromWebsite, describeIconSource } from '../utils/iconFetch'
+import { X, Upload, Globe, Loader2 } from 'lucide-react'
 
 interface AppFormProps {
   app?: AppItem | null
@@ -35,6 +36,8 @@ export default function AppForm({ app, onClose }: AppFormProps) {
   const [suggestions, setSuggestions] = useState<ReturnType<typeof searchApps>>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [iconError, setIconError] = useState(false)
+  const [iconLookupBusy, setIconLookupBusy] = useState(false)
+  const [iconLookupNote, setIconLookupNote] = useState<{ tone: 'error' | 'info'; text: string } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const suggestRef = useRef<HTMLDivElement>(null)
@@ -143,6 +146,31 @@ export default function AppForm({ app, onClose }: AppFormProps) {
     }
   }
 
+  async function handleFetchIconFromWebsite() {
+    if (iconLookupBusy) return
+    setIconLookupBusy(true)
+    setIconLookupNote(null)
+    try {
+      const result = await fetchIconFromWebsite(url)
+      setIconPreview(result.icon)
+      setIconError(false)
+      setIconLookupNote({
+        tone: 'info',
+        text:
+          result.via === 'website'
+            ? `Icon pulled from ${describeIconSource(result.detail)}`
+            : `Icon pulled from the public favicon service — ${describeIconSource(url)} could not be inspected`,
+      })
+    } catch (err) {
+      setIconLookupNote({
+        tone: 'error',
+        text: err instanceof Error ? err.message : 'Could not fetch an icon from that website',
+      })
+    } finally {
+      setIconLookupBusy(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} />
@@ -248,9 +276,36 @@ export default function AppForm({ app, onClose }: AppFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>
-              Icon
-            </label>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="block text-sm font-medium" style={{ color: 'var(--text)' }}>
+                Icon
+              </label>
+              <button
+                type="button"
+                onClick={handleFetchIconFromWebsite}
+                disabled={!url.trim() || iconLookupBusy}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs whitespace-nowrap"
+                style={{
+                  backgroundColor: 'var(--bg)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  opacity: !url.trim() || iconLookupBusy ? 0.5 : 1,
+                  cursor: !url.trim() || iconLookupBusy ? 'not-allowed' : 'pointer',
+                }}
+                title={url.trim() ? "Pull this app's icon from its website" : 'Enter the app URL first'}
+              >
+                {iconLookupBusy ? <Loader2 size={12} className="animate-spin" /> : <Globe size={12} />}
+                {iconLookupBusy ? 'Fetching…' : 'Fetch from site'}
+              </button>
+            </div>
+            {iconLookupNote && (
+              <p
+                className="text-xs mb-1"
+                style={{ color: iconLookupNote.tone === 'error' ? '#ef4444' : 'var(--text-secondary)' }}
+              >
+                {iconLookupNote.text}
+              </p>
+            )}
             <div className="flex gap-2 mb-2">
               <div className="flex-1 relative">
                 <input
