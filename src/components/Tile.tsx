@@ -167,9 +167,12 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
           <GripVertical size={14} style={{ color: 'var(--text-secondary)' }} />
         </div>
 
-        <div
-          className="absolute -top-1 -right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+        <button
+          type="button"
+          className="absolute -top-1 -right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity z-20 cursor-pointer"
           style={{ backgroundColor: 'var(--bg-card)' }}
+          aria-label="Edit or remove this tile"
+          title="Edit or remove"
           onClick={(e) => {
             e.stopPropagation()
             setLinksOpen(false)
@@ -177,12 +180,12 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
           }}
         >
           <MoreHorizontal size={14} style={{ color: 'var(--text-secondary)' }} />
-        </div>
+        </button>
 
         {menuOpen && (
           <div
             ref={menuRef}
-            className="absolute top-6 right-0 rounded-lg border shadow-lg z-30 overflow-hidden w-32"
+            className="absolute top-6 right-0 rounded-lg border shadow-lg z-40 overflow-hidden w-32"
             style={{
               backgroundColor: 'var(--bg-card)',
               borderColor: 'var(--border)',
@@ -225,17 +228,35 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
         </div>
       )}
 
-      {isMulti ? (
+      {!isMulti && (
+        <div
+          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => { e.stopPropagation(); handleOpen() }}
+        >
+          <ExternalLink size={12} className="text-white/70" />
+        </div>
+      )}
+
+      {/*
+        The per-site menu lives in the bottom-right corner, well away from the
+        top-right edit/remove control. The corners used to collide: this wrapper
+        sat at top-1 right-1 with z-20 while the edit button sits in the z-10
+        content layer at -top-1 -right-1, so it painted over the edit button's
+        centre and swallowed every click meant for it — which made a multi-site
+        tile impossible to edit or delete.
+      */}
+      {isMulti && (
         <div
           ref={linksRef}
-          className="absolute top-1 right-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute bottom-1 right-1 z-20 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={() => { setLinksOpen(!linksOpen); setMenuOpen(false) }}
-            className="p-1 rounded transition-colors"
+            className="p-1 rounded transition-colors cursor-pointer"
             style={{ backgroundColor: linksOpen ? 'rgba(0,0,0,0.45)' : 'transparent' }}
+            aria-label={`Open one of the ${links.length} sites`}
             title="Open just one of these sites"
           >
             <ListPlus size={13} className="text-white/80" />
@@ -274,13 +295,6 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
               ))}
             </div>
           )}
-        </div>
-      ) : (
-        <div
-          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => { e.stopPropagation(); handleOpen() }}
-        >
-          <ExternalLink size={12} className="text-white/70" />
         </div>
       )}
     </div>
