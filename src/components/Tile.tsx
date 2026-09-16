@@ -1,5 +1,6 @@
-import { ExternalLink, MoreHorizontal, Edit3, Trash2, GripVertical, Layers, Globe, ListPlus } from 'lucide-react'
+import { ExternalLink, MoreHorizontal, Edit3, Trash2, GripVertical, Layers, Globe, ListPlus, AlertTriangle, X } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { AppItem } from '../types'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -53,6 +54,7 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
   const apps = useAppStore((s) => s.apps)
   const [menuOpen, setMenuOpen] = useState(false)
   const [linksOpen, setLinksOpen] = useState(false)
+  const [blockedNotice, setBlockedNotice] = useState<{ blocked: number; total: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const linksRef = useRef<HTMLDivElement>(null)
 
@@ -84,6 +86,13 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
     }
   }, [isDragging])
 
+  // The blocked-tabs notice is not worth keeping on screen indefinitely.
+  useEffect(() => {
+    if (!blockedNotice) return
+    const timer = setTimeout(() => setBlockedNotice(null), 12000)
+    return () => clearTimeout(timer)
+  }, [blockedNotice])
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       const target = e.target as Node
@@ -101,16 +110,23 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
   const resolvedColor = app.color || categoryColor || '#6366f1'
   const sizeClasses = app.tileSize === 'sm' ? 'p-3' : app.tileSize === 'lg' ? 'p-6' : 'p-4'
 
+  // Browsers allow one tab per click, so the ones the blocker drops are reported
+  // rather than swallowed.
+  function report(result: { blocked: number }, total: number) {
+    setBlockedNotice(result.blocked > 0 ? { blocked: result.blocked, total } : null)
+  }
+
   function openAll() {
     if (links.length === 0) return
     useAppStore.getState().incrementClickCount(app.id)
-    openUrls(links.map((link) => link.url))
+    const targets = links.map((link) => link.url)
+    report(openUrls(targets), targets.length)
     setLinksOpen(false)
   }
 
   function openOne(url: string) {
     useAppStore.getState().incrementClickCount(app.id)
-    openUrls([url])
+    report(openUrls([url]), 1)
     setLinksOpen(false)
   }
 
@@ -125,7 +141,7 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
     }
     if (!app.url) return
     useAppStore.getState().incrementClickCount(app.id)
-    openUrls([app.url])
+    report(openUrls([app.url]), 1)
   }
 
   function handleClick(e: React.MouseEvent) {
@@ -296,6 +312,46 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
             </div>
           )}
         </div>
+      )}
+
+      {/*
+        Portalled to <body>: the tile carries a hover transform, which would
+        otherwise become the containing block for a fixed-position notice. The
+        click is stopped here because React bubbles portal events through the
+        React tree, so without it dismissing the notice would launch the tile.
+      */}
+      {blockedNotice && createPortal(
+        <div
+          role="status"
+          onClick={(e) => e.stopPropagation()}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-start gap-3 rounded-xl border px-4 py-3 w-[min(28rem,calc(100vw-2rem))]"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            borderColor: 'var(--border)',
+            boxShadow: 'var(--shadow-lg)',
+          }}
+        >
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: '#f59e0b' }} />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+              Your browser blocked {blockedNotice.blocked} of {blockedNotice.total} tabs
+            </div>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+              Browsers allow one new tab per click. Allow pop-ups for this site to open them all at
+              once, or use the list button on this tile to open them one at a time.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBlockedNotice(null)}
+            className="p-1 shrink-0 cursor-pointer"
+            style={{ color: 'var(--text-secondary)' }}
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </div>,
+        document.body,
       )}
     </div>
   )

@@ -54,25 +54,46 @@ export function resolveLinks(app: AppItem, apps: AppItem[]): ResolvedLink[] {
   return resolved
 }
 
+export interface OpenResult {
+  opened: number
+  /** Tabs the browser refused, which is what a popup blocker does. */
+  blocked: number
+}
+
 /**
- * Opens each URL in its own tab.
+ * Opens each URL in its own tab, reporting how many actually got through.
  *
- * Anchors are clicked rather than calling window.open in a loop: an in-gesture
- * click on a real <a target="_blank"> is the form browsers are most willing to
- * treat as user-initiated, so a tile launching five services is far less likely
- * to be trimmed by the popup blocker.
+ * Browsers allow a page to open exactly one tab per click, so a tile holding
+ * three sites with a popup blocker in the way yields one tab and two silences.
+ * That is browser policy, not something script can dodge: measured in Chrome
+ * with the blocker on, clicking a real <a target="_blank"> per site behaves
+ * exactly like a window.open loop — one tab either way. window.open is used
+ * regardless because its return value is the only way to notice the refusal, so
+ * the caller can report it rather than pretend the other sites opened.
  */
-export function openUrls(urls: string[]) {
+export function openUrls(urls: string[]): OpenResult {
+  let opened = 0
+  let blocked = 0
+
   for (const raw of urls) {
     const url = normalizeUrl(raw)
     if (!url) continue
 
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.target = '_blank'
-    anchor.rel = 'noopener noreferrer'
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
+    const tab = window.open(url, '_blank')
+    if (!tab) {
+      blocked++
+      continue
+    }
+
+    try {
+      // The equivalent of rel="noopener", which cannot be combined with the
+      // check above: passing noopener makes window.open return null either way.
+      tab.opener = null
+    } catch {
+      // A cross-origin WindowProxy is not always writable. The tab is open.
+    }
+    opened++
   }
+
+  return { opened, blocked }
 }

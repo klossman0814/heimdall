@@ -106,15 +106,21 @@ Clicking the tile opens every site in its own tab. Hover it and use the button i
 the corner to open just one, or to check what is in there — the badge in the
 bottom-left shows how many sites it launches.
 
+> [!IMPORTANT]
+> A launcher can only open its whole set at once if your browser allows pop-ups
+> for the dashboard. Browsers permit a page to open **one tab per click**, so
+> with pop-ups blocked the first site opens and the rest are dropped — Heimdall
+> detects that and tells you how many were. Allow pop-ups for your dashboard's
+> address (in Chrome, click the blocked-pop-up icon in the address bar and pick
+> **Always allow** on this site) and the whole set opens from a single click.
+> The tile's list button opens the sites one at a time, which works either way.
+
 - A launcher counts as one click against its own entry only, so launching a stack
   never floods **Top Items** with every app it started.
 - The sites a launcher opens keep their own tiles on the dashboard; a launcher is
   purely additive.
 - Sites are stored with the tile, so they survive a restart and are included in
   **Export**.
-- Opening many tabs at once is your browser's popup-blocker decision. Chrome and
-  Firefox allow a batch you triggered yourself; if a browser trims it, allow
-  popups for your dashboard's address.
 
 ### Pulling an icon from the app's website
 
