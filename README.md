@@ -24,6 +24,7 @@ A modern replacement for the [original Heimdall](https://github.com/linuxserver/
 
 - **App tiles** — Add links to your services with auto-resolved icons (110+ apps via Simple Icons), custom colors, and Small/Medium/Large sizes
 - **Icons pulled from the app's own website** — One click reads the site's `apple-touch-icon` / `rel="icon"` / web-manifest and embeds the real logo in your dashboard
+- **Launch several sites at once** — Build one tile that opens a whole set of services in new tabs from a single click; hover it to open just one
 - **Categories** — Organize apps into collapsible groups; rename or delete as needed
 - **Drag & drop** — Reorder apps within a category by long-pressing and dragging
 - **Smart suggestions** — Type an app name and get instant suggestions with icon preview; "Guess" button auto-fills the URL
@@ -86,6 +87,34 @@ Open `http://localhost:8086` in your browser.
 2. Type a name — suggestions appear with matching apps and icon previews
 3. The icon URL auto-fills from Simple Icons CDN; you can override it
 4. Optionally set a color, category, and tile size
+
+### Opening several sites with one click
+
+Tick **Open several sites with one click** in the app form to turn a tile into a
+launcher for a whole set of services — handy for entries that should always come
+up together.
+
+Each row is one site:
+
+- **Add URL** for anything you want to paste in directly.
+- **Add an existing app…** reuses a tile you already have. Those rows follow that
+  app, so renaming it or fixing its URL updates every launcher pointing at it.
+  If you later delete the app, the saved name and URL are kept so the launcher
+  still works.
+
+Clicking the tile opens every site in its own tab. Hover it and use the button in
+the corner to open just one, or to check what is in there — the badge in the
+bottom-left shows how many sites it launches.
+
+- A launcher counts as one click against its own entry only, so launching a stack
+  never floods **Top Items** with every app it started.
+- The sites a launcher opens keep their own tiles on the dashboard; a launcher is
+  purely additive.
+- Sites are stored with the tile, so they survive a restart and are included in
+  **Export**.
+- Opening many tabs at once is your browser's popup-blocker decision. Chrome and
+  Firefox allow a batch you triggered yourself; if a browser trims it, allow
+  popups for your dashboard's address.
 
 ### Pulling an icon from the app's website
 

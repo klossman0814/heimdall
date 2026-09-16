@@ -55,6 +55,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...a,
         clickCount: a.clickCount ?? 0,
         previousCategoryId: a.previousCategoryId ?? null,
+        links: a.links ?? [],
       })),
     }),
 
@@ -146,6 +147,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...a,
         clickCount: a.clickCount ?? 0,
         previousCategoryId: a.previousCategoryId ?? null,
+        links: a.links ?? [],
       })),
     })
   },

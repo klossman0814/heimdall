@@ -1,3 +1,17 @@
+/**
+ * One of the sites a multi-site tile launches.
+ *
+ * Links picked from an existing app record carry that app's id, so they can be
+ * resolved against the live app later; `label`/`url` are a snapshot kept for the
+ * case where that app has since been deleted.
+ */
+export interface AppLink {
+  id: string
+  label: string
+  url: string
+  appId: string | null
+}
+
 export interface AppItem {
   id: string
   name: string
@@ -9,6 +23,8 @@ export interface AppItem {
   position: number
   clickCount: number
   previousCategoryId: string | null
+  /** Empty for an ordinary single-site tile. */
+  links: AppLink[]
 }
 
 export const TOP_ITEMS_ID = 'cat_top_items'

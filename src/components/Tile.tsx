@@ -1,9 +1,10 @@
-import { ExternalLink, MoreHorizontal, Edit3, Trash2, GripVertical } from 'lucide-react'
+import { ExternalLink, MoreHorizontal, Edit3, Trash2, GripVertical, Layers, Globe, ListPlus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import type { AppItem } from '../types'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAppStore } from '../store/appStore'
+import { resolveLinks, openUrls } from '../utils/links'
 
 interface TileProps {
   app: AppItem
@@ -49,8 +50,17 @@ function TileIcon({ app }: { app: AppItem }) {
 }
 
 export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps) {
+  const apps = useAppStore((s) => s.apps)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [linksOpen, setLinksOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const linksRef = useRef<HTMLDivElement>(null)
+
+  // A tile with links launches every one of them; an ordinary tile launches its
+  // single URL. Links are resolved against the live app list so a renamed or
+  // fixed-up app shows through here.
+  const links = resolveLinks(app, apps)
+  const isMulti = links.length > 0
 
   const {
     attributes,
@@ -76,8 +86,12 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setMenuOpen(false)
+      }
+      if (linksRef.current && !linksRef.current.contains(target)) {
+        setLinksOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -87,14 +101,31 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
   const resolvedColor = app.color || categoryColor || '#6366f1'
   const sizeClasses = app.tileSize === 'sm' ? 'p-3' : app.tileSize === 'lg' ? 'p-6' : 'p-4'
 
+  function openAll() {
+    if (links.length === 0) return
+    useAppStore.getState().incrementClickCount(app.id)
+    openUrls(links.map((link) => link.url))
+    setLinksOpen(false)
+  }
+
+  function openOne(url: string) {
+    useAppStore.getState().incrementClickCount(app.id)
+    openUrls([url])
+    setLinksOpen(false)
+  }
+
   function handleOpen() {
     if (isDraggingRef.current) {
       isDraggingRef.current = false
       return
     }
+    if (isMulti) {
+      openAll()
+      return
+    }
     if (!app.url) return
     useAppStore.getState().incrementClickCount(app.id)
-    window.open(app.url.startsWith('http') ? app.url : `https://${app.url}`, '_blank')
+    openUrls([app.url])
   }
 
   function handleClick(e: React.MouseEvent) {
@@ -141,6 +172,7 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
           style={{ backgroundColor: 'var(--bg-card)' }}
           onClick={(e) => {
             e.stopPropagation()
+            setLinksOpen(false)
             setMenuOpen(!menuOpen)
           }}
         >
@@ -182,12 +214,75 @@ export default function Tile({ app, categoryColor, onEdit, onRemove }: TileProps
         </span>
       </div>
 
-      <div
-        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={(e) => { e.stopPropagation(); handleOpen() }}
-      >
-        <ExternalLink size={12} className="text-white/70" />
-      </div>
+      {isMulti && (
+        <div
+          className="absolute bottom-1 left-1 z-20 flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-semibold"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)', color: 'rgba(255,255,255,0.85)' }}
+          title={`Opens ${links.length} sites`}
+        >
+          <Layers size={9} />
+          {links.length}
+        </div>
+      )}
+
+      {isMulti ? (
+        <div
+          ref={linksRef}
+          className="absolute top-1 right-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => { setLinksOpen(!linksOpen); setMenuOpen(false) }}
+            className="p-1 rounded transition-colors"
+            style={{ backgroundColor: linksOpen ? 'rgba(0,0,0,0.45)' : 'transparent' }}
+            title="Open just one of these sites"
+          >
+            <ListPlus size={13} className="text-white/80" />
+          </button>
+
+          {linksOpen && (
+            <div
+              className="absolute top-6 right-0 w-52 rounded-lg border shadow-lg z-30 max-h-64 overflow-y-auto scrollbar-thin"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border)',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              <button
+                onClick={openAll}
+                className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-left transition-colors hover:opacity-80"
+                style={{ color: 'var(--accent)' }}
+              >
+                <Layers size={13} /> Open all ({links.length})
+              </button>
+              <div style={{ height: 1, backgroundColor: 'var(--border)' }} />
+              {links.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => openOne(link.url)}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors hover:opacity-80"
+                  style={{ color: 'var(--text)' }}
+                  title={link.url}
+                >
+                  {link.icon
+                    ? <img src={link.icon} alt="" className="w-4 h-4 rounded shrink-0" />
+                    : <Globe size={13} className="shrink-0" style={{ color: 'var(--text-secondary)' }} />}
+                  <span className="truncate">{link.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div
+          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => { e.stopPropagation(); handleOpen() }}
+        >
+          <ExternalLink size={12} className="text-white/70" />
+        </div>
+      )}
     </div>
   )
 }
